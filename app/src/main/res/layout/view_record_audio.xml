@@ -39,10 +39,11 @@
             tools:text="00:10.00" />
 
         <ImageView
-            android:id="@+id/slideIcon"
+            android:id="@+id/slideArrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
+            android:layout_marginTop="2dp"
             android:src="@drawable/ic_arrow_left_24dp"
             tools:alpha="0.75" />
 
@@ -70,6 +71,18 @@
         app:layout_constraintStart_toStartOf="@+id/record"
         tools:src="@drawable/ic_lock_open_24dp"
         tools:translationY="-102dp"
+        tools:visibility="visible" />
+
+    <ImageView
+        android:id="@+id/lockArrow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_arrow_up_24dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/recordLock"
+        app:layout_constraintStart_toStartOf="@+id/recordLock"
+        tools:translationY="-72dp"
         tools:visibility="visible" />
 
     <ImageView

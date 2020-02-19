@@ -3,6 +3,7 @@ package com.aleksejantonov.vectoranimations
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Color
 import android.os.CountDownTimer
@@ -10,6 +11,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateInterpolator
+import android.view.animation.BounceInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.Toast
@@ -29,6 +31,7 @@ class RecordAudioView(
 
     private var recordAudioAnimSet: AnimatorSet? = null
     private var recordCancelAnimSet: AnimatorSet? = null
+    private var lockArrowShakingAnimSet: AnimatorSet? = null
     private var recording: Boolean = false
     private var recordingPinned: Boolean = false
     private var timer: CountDownTimer? = null
@@ -74,6 +77,8 @@ class RecordAudioView(
                 recordPanel.visibility = View.GONE
                 recordLock.visibility = View.GONE
                 recordLock.setImageResource(R.drawable.ic_lock_open_24dp)
+                lockArrow.alpha = 0.75f
+                lockArrow.visibility = View.GONE
                 recordDuration.text = String.format("%02d:%02d.%02d", 0, 0, 0)
                 record.setBackgroundResource(0)
                 record.setImageResource(R.drawable.ic_mic_24dp)
@@ -82,9 +87,12 @@ class RecordAudioView(
                 record.scaleY = 1f
                 record.alpha = 1f
                 context?.getScreenWidth()?.toFloat()?.let { recordPanel.x = it }
-                context?.getScreenHeight()?.toFloat()?.let { recordLock.y = it }
-                slideIcon.alpha = 0.75f
-                slideIcon.visibility = View.VISIBLE
+                context?.getScreenHeight()?.toFloat()?.let {
+                    recordLock.y = it
+                    lockArrow.y = it
+                }
+                slideArrow.alpha = 0.75f
+                slideArrow.visibility = View.VISIBLE
                 recordCancel.text = context.getText(R.string.record_view_slide_cancel)
                 recordCancel.alpha = 0.75f
                 recordCancel.setOnClickListener { stopRecording() }
@@ -97,7 +105,8 @@ class RecordAudioView(
                 record.setColorFilter(Color.argb(255, 255, 255, 255))
                 recordPanel.visibility = View.VISIBLE
                 recordLock.visibility = View.VISIBLE
-                slideIcon.visibility = View.VISIBLE
+                lockArrow.visibility = View.VISIBLE
+                slideArrow.visibility = View.VISIBLE
 
                 startRecordingAnimation()
                 launchTimer()
@@ -105,11 +114,13 @@ class RecordAudioView(
             RecordingState.PINNED -> {
                 context?.vibrate()
                 recordingPinned = true
-                slideIcon.visibility = View.GONE
+                slideArrow.visibility = View.GONE
                 recordCancel.text = context.getText(R.string.record_view_cancel)
                 recordCancel.alpha = 1f
                 recordLock.setImageResource(R.drawable.ic_lock_24dp)
+                lockArrow.visibility = View.GONE
                 record.setImageResource(R.drawable.ic_send_24dp)
+                disableShakingAnimation()
             }
             RecordingState.STOPPED -> {
                 context?.vibrate()
@@ -117,6 +128,7 @@ class RecordAudioView(
                 recording = false
 
                 disableTimer()
+                disableShakingAnimation()
                 stopRecordingAnimation()
             }
         }
@@ -170,16 +182,34 @@ class RecordAudioView(
             },
             ObjectAnimator.ofFloat(recordLock, View.TRANSLATION_Y, -(context?.getPxFromDp(102)?.toFloat() ?: 102f)).apply {
                 duration = RECORD_PANEL_APPEARANCE_DURATION
+            },
+            ObjectAnimator.ofFloat(lockArrow, View.TRANSLATION_Y, -(context?.getPxFromDp(72)?.toFloat() ?: 72f)).apply {
+                duration = RECORD_PANEL_APPEARANCE_DURATION
             }
         )
         recordAudioAnimSet?.addListener(object : AnimatorListenerAdapter {
             override fun onAnimationEnd(animator: Animator) {
                 if (animator == recordAudioAnimSet) {
+                    startArrowShakingAnimation()
                     recordAudioAnimSet = null
                 }
             }
         })
         recordAudioAnimSet?.start()
+    }
+
+    private fun startArrowShakingAnimation() {
+        lockArrowShakingAnimSet?.cancel()
+        lockArrowShakingAnimSet = AnimatorSet()
+        lockArrowShakingAnimSet?.interpolator = AccelerateInterpolator()
+        lockArrowShakingAnimSet?.playTogether(
+            ObjectAnimator.ofFloat(lockArrow, View.TRANSLATION_Y, lockArrow.y).apply {
+                repeatMode = ValueAnimator.REVERSE
+                repeatCount = ValueAnimator.INFINITE
+                duration = SHAKING_DURATION
+            }
+        )
+        lockArrowShakingAnimSet?.start()
     }
 
     private fun stopRecordingAnimation() {
@@ -191,6 +221,9 @@ class RecordAudioView(
                 duration = RECORD_PANEL_APPEARANCE_DURATION
             },
             ObjectAnimator.ofFloat(recordLock, View.TRANSLATION_Y, context?.getScreenHeight()?.toFloat() ?: 0f).apply {
+                duration = RECORD_PANEL_APPEARANCE_DURATION
+            },
+            ObjectAnimator.ofFloat(lockArrow, View.TRANSLATION_Y, context?.getScreenHeight()?.toFloat() ?: 0f).apply {
                 duration = RECORD_PANEL_APPEARANCE_DURATION
             },
             ObjectAnimator.ofFloat(recordPanel, View.ALPHA, 0.8f, 0f).apply {
@@ -236,8 +269,14 @@ class RecordAudioView(
         timer = null
     }
 
+    private fun disableShakingAnimation() {
+        lockArrowShakingAnimSet?.cancel()
+        lockArrowShakingAnimSet = null
+    }
+
     companion object {
         private const val RECORD_PANEL_APPEARANCE_DURATION = 330L
+        private const val SHAKING_DURATION = 600L
         private const val MAX_RECORD_DURATION = 10L * 60 * 1000 // 10 min in millis
     }
 }
