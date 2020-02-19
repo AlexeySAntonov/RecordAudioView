@@ -52,7 +52,7 @@ class RecordAudioView(
                 false
             }
             MotionEvent.ACTION_MOVE -> {
-                if (!recordingPinned && abs(event.y) > context.getPxFromDp(48)) {
+                if (!recordingPinned && event.y < 0 && abs(event.y) > context.getPxFromDp(40)) {
                     pinRecording()
                 }
                 true
@@ -81,6 +81,7 @@ class RecordAudioView(
                 record.alpha = 1f
                 context?.getScreenWidth()?.toFloat()?.let { recordPanel.x = it }
                 context?.getScreenHeight()?.toFloat()?.let { recordLock.y = it }
+                recordCancel.text = context.getText(R.string.record_view_slide_cancel)
                 recordCancel.setOnClickListener { stopRecording() }
             }
             RecordingState.RECORDING -> {
@@ -98,6 +99,7 @@ class RecordAudioView(
             RecordingState.PINNED -> {
                 context?.vibrate()
                 recordingPinned = true
+                recordCancel.text = context.getText(R.string.record_view_cancel)
                 recordLock.setImageResource(R.drawable.ic_lock_24dp)
                 record.setImageResource(R.drawable.ic_send_24dp)
             }

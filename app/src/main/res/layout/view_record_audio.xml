@@ -46,9 +46,9 @@
             android:background="@android:color/white"
             android:fontFamily="sans-serif-medium"
             android:gravity="center_vertical"
-            android:text="CANCEL"
             android:textColor="@color/appGray"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            tools:text="@string/record_view_slide_cancel" />
 
     </LinearLayout>
 
