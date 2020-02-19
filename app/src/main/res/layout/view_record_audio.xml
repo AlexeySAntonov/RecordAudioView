@@ -56,11 +56,11 @@
         android:id="@+id/recordLock"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_lock_open_24dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/record"
         app:layout_constraintStart_toStartOf="@+id/record"
+        tools:src="@drawable/ic_lock_open_24dp"
         tools:translationY="-102dp"
         tools:visibility="visible" />
 
@@ -71,13 +71,12 @@
         android:backgroundTint="@color/appGray"
         android:elevation="4dp"
         android:scaleType="center"
-        android:src="@drawable/ic_mic_24dp"
-        android:tint="@color/appRed"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         tools:background="@drawable/background_circle"
         tools:scaleX="1.5f"
         tools:scaleY="1.5f"
+        tools:src="@drawable/ic_mic_24dp"
         tools:tint="@android:color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

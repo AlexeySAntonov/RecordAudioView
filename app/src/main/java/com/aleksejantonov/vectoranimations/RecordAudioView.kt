@@ -20,9 +20,10 @@ class RecordAudioView(
     context: Context, attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs), View.OnTouchListener {
 
-    enum class RecordState {
+    enum class RecordingState {
         DEFAULT,
         RECORDING,
+        PINNED,
         STOPPED
     }
 
@@ -34,7 +35,7 @@ class RecordAudioView(
 
     init {
         addView(inflate(R.layout.view_record_audio))
-        updateRecordPanelState()
+        updateRecordingState(RecordingState.DEFAULT)
         setupRecordButton()
     }
 
@@ -52,10 +53,7 @@ class RecordAudioView(
             }
             MotionEvent.ACTION_MOVE -> {
                 if (!recordingPinned && abs(event.y) > context.getPxFromDp(48)) {
-                    recordingPinned = true
-                    context?.vibrate()
-                    recordLock.setImageResource(R.drawable.ic_lock_24dp)
-                    record.setImageResource(R.drawable.ic_send_24dp)
+                    pinRecording()
                 }
                 true
             }
@@ -67,57 +65,50 @@ class RecordAudioView(
         if (recording) stopRecording()
     }
 
-    private fun updateRecordPanelState() {
-        if (recording) {
-            recordCancelAnimSet?.cancel()
-            recordCancelAnimSet = AnimatorSet()
-            recordCancelAnimSet?.interpolator = AccelerateInterpolator()
-            recordCancelAnimSet?.playTogether(
-                ObjectAnimator.ofFloat(recordPanel, View.TRANSLATION_X, context?.getScreenWidth()?.toFloat() ?: 0f).apply {
-                    duration = RECORD_PANEL_APPEARANCE_DURATION
-                },
-                ObjectAnimator.ofFloat(recordLock, View.TRANSLATION_Y, context?.getScreenHeight()?.toFloat() ?: 0f).apply {
-                    duration = RECORD_PANEL_APPEARANCE_DURATION
-                },
-                ObjectAnimator.ofFloat(recordPanel, View.ALPHA, 0.8f, 0f).apply {
-                    duration = RECORD_PANEL_APPEARANCE_DURATION
-                },
-                ObjectAnimator.ofFloat(record, View.SCALE_X, record.scaleX, 1f).apply {
-                    duration = RECORD_PANEL_APPEARANCE_DURATION
-                },
-                ObjectAnimator.ofFloat(record, View.SCALE_Y, record.scaleY, 1f).apply {
-                    duration = RECORD_PANEL_APPEARANCE_DURATION
-                },
-                ObjectAnimator.ofFloat(record, View.ALPHA, record.alpha, 1f).apply {
-                    duration = RECORD_PANEL_APPEARANCE_DURATION
-                }
-            )
-            recordCancelAnimSet?.addListener(object : AnimatorListenerAdapter {
-                override fun onAnimationEnd(animator: Animator) {
-                    if (animator == recordCancelAnimSet) {
-                        recordPanel.alpha = 1f
-                        recordPanel.visibility = View.GONE
-                        recordLock.visibility = View.GONE
-                        recordLock.setImageResource(R.drawable.ic_lock_open_24dp)
-                        recordDuration.text = String.format("%02d:%02d.%02d", 0, 0, 0)
-                        record.setBackgroundResource(0)
-                        record.setImageResource(R.drawable.ic_mic_24dp)
-                        record.setColorFilter(Color.argb(255, 255, 67, 94)) // R.color.cardRed
-                        record.scaleX = 1f
-                        record.scaleY = 1f
-                        record.alpha = 1f
-                        recordCancelAnimSet = null
-                    }
-                }
-            })
-            recordCancelAnimSet?.start()
-        } else {
-            recordPanel.visibility = View.GONE
-            recordLock.visibility = View.GONE
-            context?.getScreenWidth()?.toFloat()?.let { recordPanel.x = it }
-            context?.getScreenHeight()?.toFloat()?.let { recordLock.y = it }
-            recordDuration.text = String.format("%02d:%02d.%02d", 0, 0, 0)
-            recordCancel.setOnClickListener { stopRecording() }
+    private fun updateRecordingState(state: RecordingState) {
+        when (state) {
+            RecordingState.DEFAULT -> {
+                recordPanel.alpha = 1f
+                recordPanel.visibility = View.GONE
+                recordLock.visibility = View.GONE
+                recordLock.setImageResource(R.drawable.ic_lock_open_24dp)
+                recordDuration.text = String.format("%02d:%02d.%02d", 0, 0, 0)
+                record.setBackgroundResource(0)
+                record.setImageResource(R.drawable.ic_mic_24dp)
+                record.setColorFilter(Color.argb(255, 255, 67, 94)) // R.color.cardRed
+                record.scaleX = 1f
+                record.scaleY = 1f
+                record.alpha = 1f
+                context?.getScreenWidth()?.toFloat()?.let { recordPanel.x = it }
+                context?.getScreenHeight()?.toFloat()?.let { recordLock.y = it }
+                recordCancel.setOnClickListener { stopRecording() }
+            }
+            RecordingState.RECORDING -> {
+                context?.vibrate()
+                recording = true
+                record.setBackgroundResource(R.drawable.background_circle)
+                record.setImageResource(R.drawable.ic_mic_24dp)
+                record.setColorFilter(Color.argb(255, 255, 255, 255))
+                recordPanel.visibility = View.VISIBLE
+                recordLock.visibility = View.VISIBLE
+
+                startRecordingAnimation()
+                launchTimer()
+            }
+            RecordingState.PINNED -> {
+                context?.vibrate()
+                recordingPinned = true
+                recordLock.setImageResource(R.drawable.ic_lock_24dp)
+                record.setImageResource(R.drawable.ic_send_24dp)
+            }
+            RecordingState.STOPPED -> {
+                context?.vibrate()
+                recordingPinned = false
+                recording = false
+
+                disableTimer()
+                stopRecordingAnimation()
+            }
         }
     }
 
@@ -139,14 +130,18 @@ class RecordAudioView(
     }
 
     private fun startRecording() {
-        context?.vibrate()
-        record.setBackgroundResource(R.drawable.background_circle)
-        record.setImageResource(R.drawable.ic_mic_24dp)
-        record.setColorFilter(Color.argb(255, 255, 255, 255))
-        recordPanel.visibility = View.VISIBLE
-        recordLock.visibility = View.VISIBLE
-        recordLock.setImageResource(R.drawable.ic_lock_open_24dp)
+        updateRecordingState(RecordingState.RECORDING)
+    }
 
+    private fun pinRecording() {
+        updateRecordingState(RecordingState.PINNED)
+    }
+
+    private fun stopRecording() {
+        updateRecordingState(RecordingState.STOPPED)
+    }
+
+    private fun startRecordingAnimation() {
         recordAudioAnimSet?.cancel()
         recordAudioAnimSet = AnimatorSet()
         recordAudioAnimSet?.interpolator = DecelerateInterpolator()
@@ -155,27 +150,61 @@ class RecordAudioView(
                 duration = RECORD_PANEL_APPEARANCE_DURATION
             },
             ObjectAnimator.ofFloat(record, View.SCALE_X, 1f, 1.5f).apply {
-                //                repeatCount = ValueAnimator.INFINITE
-//                repeatMode = ValueAnimator.REVERSE
                 duration = RECORD_PANEL_APPEARANCE_DURATION
             },
             ObjectAnimator.ofFloat(record, View.SCALE_Y, 1f, 1.5f).apply {
-                //                repeatCount = ValueAnimator.INFINITE
-//                repeatMode = ValueAnimator.REVERSE
                 duration = RECORD_PANEL_APPEARANCE_DURATION
             },
             ObjectAnimator.ofFloat(record, View.ALPHA, 0.5f, 1f).apply {
-                //                repeatCount = ValueAnimator.INFINITE
-//                repeatMode = ValueAnimator.REVERSE
                 duration = RECORD_PANEL_APPEARANCE_DURATION
             },
             ObjectAnimator.ofFloat(recordLock, View.TRANSLATION_Y, -(context?.getPxFromDp(102)?.toFloat() ?: 102f)).apply {
                 duration = RECORD_PANEL_APPEARANCE_DURATION
             }
         )
+        recordAudioAnimSet?.addListener(object : AnimatorListenerAdapter {
+            override fun onAnimationEnd(animator: Animator) {
+                if (animator == recordAudioAnimSet) {
+                    recordAudioAnimSet = null
+                }
+            }
+        })
         recordAudioAnimSet?.start()
-        launchTimer()
-        recording = true
+    }
+
+    private fun stopRecordingAnimation() {
+        recordCancelAnimSet?.cancel()
+        recordCancelAnimSet = AnimatorSet()
+        recordCancelAnimSet?.interpolator = AccelerateInterpolator()
+        recordCancelAnimSet?.playTogether(
+            ObjectAnimator.ofFloat(recordPanel, View.TRANSLATION_X, context?.getScreenWidth()?.toFloat() ?: 0f).apply {
+                duration = RECORD_PANEL_APPEARANCE_DURATION
+            },
+            ObjectAnimator.ofFloat(recordLock, View.TRANSLATION_Y, context?.getScreenHeight()?.toFloat() ?: 0f).apply {
+                duration = RECORD_PANEL_APPEARANCE_DURATION
+            },
+            ObjectAnimator.ofFloat(recordPanel, View.ALPHA, 0.8f, 0f).apply {
+                duration = RECORD_PANEL_APPEARANCE_DURATION
+            },
+            ObjectAnimator.ofFloat(record, View.SCALE_X, record.scaleX, 1f).apply {
+                duration = RECORD_PANEL_APPEARANCE_DURATION
+            },
+            ObjectAnimator.ofFloat(record, View.SCALE_Y, record.scaleY, 1f).apply {
+                duration = RECORD_PANEL_APPEARANCE_DURATION
+            },
+            ObjectAnimator.ofFloat(record, View.ALPHA, record.alpha, 1f).apply {
+                duration = RECORD_PANEL_APPEARANCE_DURATION
+            }
+        )
+        recordCancelAnimSet?.addListener(object : AnimatorListenerAdapter {
+            override fun onAnimationEnd(animator: Animator) {
+                if (animator == recordCancelAnimSet) {
+                    updateRecordingState(RecordingState.DEFAULT)
+                    recordCancelAnimSet = null
+                }
+            }
+        })
+        recordCancelAnimSet?.start()
     }
 
     private fun launchTimer() {
@@ -187,20 +216,14 @@ class RecordAudioView(
             }
 
             override fun onFinish() {
-                // TODO
+                updateRecordingState(RecordingState.STOPPED)
             }
         }.start()
     }
 
-    private fun stopRecording() {
-        context?.vibrate()
-        updateRecordPanelState()
+    private fun disableTimer() {
         timer?.cancel()
         timer = null
-        recordAudioAnimSet?.cancel()
-        recordAudioAnimSet = null
-        recordingPinned = false
-        recording = false
     }
 
     companion object {
