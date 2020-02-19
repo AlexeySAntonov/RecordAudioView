@@ -24,7 +24,7 @@
             android:layout_gravity="center_vertical"
             android:layout_marginStart="16dp"
             android:background="@drawable/background_circle"
-            android:backgroundTint="@color/appRed"
+            android:backgroundTint="@color/cardRed"
             android:gravity="center"
             android:textSize="16sp" />
 
@@ -38,16 +38,24 @@
             android:textSize="16sp"
             tools:text="00:10.00" />
 
+        <ImageView
+            android:id="@+id/slideIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_arrow_left_24dp"
+            tools:alpha="0.75" />
+
         <TextView
             android:id="@+id/recordCancel"
             android:layout_width="0dp"
             android:layout_height="52dp"
             android:layout_weight="2"
-            android:background="@android:color/white"
             android:fontFamily="sans-serif-medium"
             android:gravity="center_vertical"
-            android:textColor="@color/appGray"
+            android:textColor="@color/cardGray"
             android:textSize="16sp"
+            tools:alpha="0.75"
             tools:text="@string/record_view_slide_cancel" />
 
     </LinearLayout>
@@ -68,7 +76,7 @@
         android:id="@+id/record"
         android:layout_width="52dp"
         android:layout_height="52dp"
-        android:backgroundTint="@color/appGray"
+        android:backgroundTint="@color/cardGray"
         android:elevation="4dp"
         android:scaleType="center"
         app:layout_constraintBottom_toBottomOf="parent"
