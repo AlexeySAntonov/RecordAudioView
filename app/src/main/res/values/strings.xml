@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">VectorAnimations</string>
+    <string name="action_settings">Settings</string>
+    <string name="terms">Terms of Use</string>
+    <string name="policy">Privacy Policy</string>
+    <string name="login_policy_text">By using Togezzer, you agree with our \n %1$s and %2$s</string>
+</resources>
