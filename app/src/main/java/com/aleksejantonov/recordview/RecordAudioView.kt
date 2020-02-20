@@ -143,6 +143,7 @@ class RecordAudioView(
             RecordingState.DEFAULT -> {
                 recordPanel.alpha = 1f
                 recordPanel.visibility = View.GONE
+                recordPanel.setOnTouchListener { _, _ -> true }
                 recordLock.visibility = View.GONE
                 recordLock.setImageResource(R.drawable.ic_lock_open_24dp)
                 lockArrow.alpha = 0.75f
