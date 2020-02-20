@@ -42,3 +42,8 @@ fun Context.vibrate() {
 fun ViewGroup.inflate(layoutId: Int, attachToRoot: Boolean = false): View {
     return LayoutInflater.from(context).inflate(layoutId, this, attachToRoot)
 }
+
+fun getRecordPath(context: Context): String {
+    val currentTime = System.currentTimeMillis() / 1000
+    return context.cacheDir.absolutePath + "/record" + currentTime + ".AAC"
+}

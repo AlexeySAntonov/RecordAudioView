@@ -5,20 +5,23 @@ import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.MediaRecorder
 import android.os.Build
 import android.os.CountDownTimer
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateInterpolator
-import android.view.animation.BounceInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.Toast
 import kotlinx.android.synthetic.main.view_record_audio.view.*
+import java.lang.RuntimeException
 import kotlin.math.abs
 
 class RecordAudioView(
@@ -32,6 +35,15 @@ class RecordAudioView(
         STOPPED
     }
 
+    private val permissions: Array<String> = arrayOf(
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    )
+
+    private var audioRecorder: MediaRecorder? = null
+    private var currentRecordPath: String? = null
+
     private var recordAudioAnimSet: AnimatorSet? = null
     private var recordCancelAnimSet: AnimatorSet? = null
     private var lockArrowShakingAnimSet: AnimatorSet? = null
@@ -42,8 +54,7 @@ class RecordAudioView(
 
     private var recordStartEventListener: (() -> Unit)? = null
     private var recordCancelEventListener: (() -> Unit)? = null
-    private var recordFinishEventListener: (() -> Unit)? = null
-    private var permissionRequireListener: (() -> Unit)? = null
+    private var recordFinishEventListener: ((path: String?) -> Unit)? = null
 
     init {
         addView(inflate(R.layout.view_record_audio))
@@ -83,16 +94,43 @@ class RecordAudioView(
         recordCancelEventListener = listener
     }
 
-    fun setFinishEventListener(listener: () -> Unit) {
+    fun setFinishEventListener(listener: (path: String?) -> Unit) {
         recordFinishEventListener = listener
-    }
-
-    fun setPermissionRequireListener(listener: () -> Unit) {
-        permissionRequireListener = listener
     }
 
     fun onPause() {
         if (recording) stopRecording(canceled = true)
+    }
+
+    private fun prepareAndStartRecorder(path: String) {
+        audioRecorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.AAC_ADTS)
+            setOutputFile(path)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        }
+        try {
+            audioRecorder?.prepare()
+        } catch (e: Exception) {
+            Log.e("Rec prep failed:", e.toString())
+        }
+        audioRecorder?.let {
+            startRecording()
+            it.start()
+        }
+    }
+
+    private fun releaseRecorder() {
+        audioRecorder?.apply {
+            try {
+                stop()
+            } catch (e: RuntimeException) {
+                Log.e("Recorder stop() failed:", e.toString())
+            } finally {
+                release()
+                audioRecorder = null
+            }
+        }
     }
 
     private fun updateRecordingState(state: RecordingState) {
@@ -153,6 +191,7 @@ class RecordAudioView(
                 recording = false
 
                 disableTimer()
+                releaseRecorder()
                 disableShakingAnimation()
                 disableRecordDotAnimation()
                 stopRecordingAnimation()
@@ -165,9 +204,10 @@ class RecordAudioView(
         record.setOnLongClickListener {
             if (Build.VERSION.SDK_INT < 23 || Build.VERSION.SDK_INT >= 23 && context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                 if (recording) return@setOnLongClickListener true
-                startRecording()
+                currentRecordPath = getRecordPath(context)
+                currentRecordPath?.let { prepareAndStartRecorder(it) }
             } else {
-                permissionRequireListener?.invoke()
+                (context as? Activity)?.requestPermissions(permissions, RECORD_PERMISSION_REQUEST_CODE)
             }
             true
         }
@@ -194,7 +234,8 @@ class RecordAudioView(
         if (canceled) {
             recordCancelEventListener?.invoke()
         } else {
-            recordFinishEventListener?.invoke()
+            recordFinishEventListener?.invoke(currentRecordPath)
+            currentRecordPath = null
         }
         updateRecordingState(RecordingState.STOPPED)
     }
@@ -334,5 +375,6 @@ class RecordAudioView(
         private const val RECORD_PANEL_APPEARANCE_DURATION = 330L
         private const val REVERSE_ANIM_DURATION = 600L
         private const val MAX_RECORD_DURATION = 10L * 60 * 1000 // 10 min in millis
+        const val RECORD_PERMISSION_REQUEST_CODE = 1321
     }
 }
