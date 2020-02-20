@@ -1,4 +1,4 @@
-package com.aleksejantonov.vectoranimations
+package com.aleksejantonov.recordview
 
 import android.Manifest
 import android.animation.Animator

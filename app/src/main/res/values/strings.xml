@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">VectorAnimations</string>
+    <string name="app_name">Record View</string>
     <string name="action_settings">Settings</string>
     <string name="record_view_cancel">CANCEL</string>
     <string name="record_view_slide_cancel">slide to cancel</string>

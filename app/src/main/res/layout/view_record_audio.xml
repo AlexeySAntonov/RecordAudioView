@@ -24,7 +24,7 @@
             android:layout_gravity="center_vertical"
             android:layout_marginStart="16dp"
             android:background="@drawable/background_circle"
-            android:backgroundTint="@color/cardRed"
+            android:backgroundTint="@color/appRed"
             android:gravity="center"
             android:textSize="16sp" />
 
@@ -54,7 +54,7 @@
             android:layout_weight="2"
             android:fontFamily="sans-serif-medium"
             android:gravity="center_vertical"
-            android:textColor="@color/cardGray"
+            android:textColor="@color/appGrey"
             android:textSize="16sp"
             tools:alpha="0.75"
             tools:text="@string/record_view_slide_cancel" />
@@ -89,7 +89,7 @@
         android:id="@+id/record"
         android:layout_width="52dp"
         android:layout_height="52dp"
-        android:backgroundTint="@color/cardGray"
+        android:backgroundTint="@color/appGrey"
         android:elevation="4dp"
         android:scaleType="center"
         app:layout_constraintBottom_toBottomOf="parent"

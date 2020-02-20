@@ -3,8 +3,8 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
-    <color name="cardRed">#FF435E</color>
-    <color name="cardGreen">#65a75c</color>
-    <color name="cardBlue">#047ADF</color>
-    <color name="cardGray">#887D93</color>
+    <color name="appRed">#FF435E</color>
+    <color name="appGreen">#65a75c</color>
+    <color name="appBlue">#047ADF</color>
+    <color name="appGrey">#887D93</color>
 </resources>
