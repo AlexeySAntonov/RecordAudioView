@@ -102,6 +102,11 @@ class RecordAudioView(
         if (recording) stopRecording(canceled = true)
     }
 
+    fun onEnable(enabled: Boolean) {
+        this.isEnabled = enabled
+        this.alpha = if (enabled) 1f else 0.5f
+    }
+
     private fun prepareAndStartRecorder(path: String) {
         audioRecorder = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -203,7 +208,7 @@ class RecordAudioView(
         record.setOnTouchListener(this)
         record.setOnLongClickListener {
             if (Build.VERSION.SDK_INT < 23 || Build.VERSION.SDK_INT >= 23 && context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                if (recording) return@setOnLongClickListener true
+                if (recording || !isEnabled) return@setOnLongClickListener true
                 currentRecordPath = getRecordPath(context)
                 currentRecordPath?.let { prepareAndStartRecorder(it) }
             } else {
