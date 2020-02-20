@@ -37,6 +37,10 @@ class RecordAudioView(
     private var recordingPinned: Boolean = false
     private var timer: CountDownTimer? = null
 
+    private var recordStartEventListener: (() -> Unit)? = null
+    private var recordCancelEventListener: (() -> Unit)? = null
+    private var recordFinishEventListener: (() -> Unit)? = null
+
     init {
         addView(inflate(R.layout.view_record_audio))
         updateRecordingState(RecordingState.DEFAULT)
@@ -50,7 +54,7 @@ class RecordAudioView(
             }
             MotionEvent.ACTION_UP   -> {
                 if (recording && !recordingPinned) {
-                    stopRecording()
+                    stopRecording(canceled = false)
                     return true
                 }
                 false
@@ -59,7 +63,7 @@ class RecordAudioView(
                 if (recording && !recordingPinned && event.y < 0 && abs(event.y) > context.getPxFromDp(40)) {
                     pinRecording()
                 } else if (recording && !recordingPinned && event.x < 0 && abs(event.x) > context.getPxFromDp(40)) {
-                    stopRecording()
+                    stopRecording(canceled = true)
                 }
                 true
             }
@@ -67,8 +71,20 @@ class RecordAudioView(
         }
     }
 
+    fun setStartEventListener(listener: () -> Unit) {
+        recordStartEventListener = listener
+    }
+
+    fun setCancelEventListener(listener: () -> Unit) {
+        recordCancelEventListener = listener
+    }
+
+    fun setFinishEventListener(listener: () -> Unit) {
+        recordFinishEventListener = listener
+    }
+
     fun onPause() {
-        if (recording) stopRecording()
+        if (recording) stopRecording(canceled = true)
     }
 
     private fun updateRecordingState(state: RecordingState) {
@@ -96,7 +112,7 @@ class RecordAudioView(
                 slideArrow.visibility = View.VISIBLE
                 recordCancel.text = context.getText(R.string.record_view_slide_cancel)
                 recordCancel.alpha = 0.75f
-                recordCancel.setOnClickListener { stopRecording() }
+                recordCancel.setOnClickListener { stopRecording(canceled = true) }
             }
             RecordingState.RECORDING -> {
                 context?.vibrate()
@@ -146,14 +162,15 @@ class RecordAudioView(
 
         record.setOnClickListener {
             if (recording && recordingPinned) {
-                stopRecording()
+                stopRecording(canceled = false)
             } else if (!recording) {
-                Toast.makeText(context, "Hold to record audio", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getText(R.string.record_hold_to_record), Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun startRecording() {
+        recordStartEventListener?.invoke()
         updateRecordingState(RecordingState.RECORDING)
     }
 
@@ -161,7 +178,12 @@ class RecordAudioView(
         updateRecordingState(RecordingState.PINNED)
     }
 
-    private fun stopRecording() {
+    private fun stopRecording(canceled: Boolean) {
+        if (canceled) {
+            recordCancelEventListener?.invoke()
+        } else {
+            recordFinishEventListener?.invoke()
+        }
         updateRecordingState(RecordingState.STOPPED)
     }
 
