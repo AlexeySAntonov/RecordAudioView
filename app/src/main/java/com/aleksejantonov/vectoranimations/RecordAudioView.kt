@@ -1,11 +1,14 @@
 package com.aleksejantonov.vectoranimations
 
+import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.CountDownTimer
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -40,6 +43,7 @@ class RecordAudioView(
     private var recordStartEventListener: (() -> Unit)? = null
     private var recordCancelEventListener: (() -> Unit)? = null
     private var recordFinishEventListener: (() -> Unit)? = null
+    private var permissionRequireListener: (() -> Unit)? = null
 
     init {
         addView(inflate(R.layout.view_record_audio))
@@ -81,6 +85,10 @@ class RecordAudioView(
 
     fun setFinishEventListener(listener: () -> Unit) {
         recordFinishEventListener = listener
+    }
+
+    fun setPermissionRequireListener(listener: () -> Unit) {
+        permissionRequireListener = listener
     }
 
     fun onPause() {
@@ -155,8 +163,12 @@ class RecordAudioView(
     private fun setupRecordButton() {
         record.setOnTouchListener(this)
         record.setOnLongClickListener {
-            if (recording) return@setOnLongClickListener true
-            startRecording()
+            if (Build.VERSION.SDK_INT < 23 || Build.VERSION.SDK_INT >= 23 && context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                if (recording) return@setOnLongClickListener true
+                startRecording()
+            } else {
+                permissionRequireListener?.invoke()
+            }
             true
         }
 
