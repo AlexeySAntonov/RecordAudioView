@@ -32,6 +32,7 @@ class RecordAudioView(
     private var recordAudioAnimSet: AnimatorSet? = null
     private var recordCancelAnimSet: AnimatorSet? = null
     private var lockArrowShakingAnimSet: AnimatorSet? = null
+    private var recordDotAnimSet: AnimatorSet? = null
     private var recording: Boolean = false
     private var recordingPinned: Boolean = false
     private var timer: CountDownTimer? = null
@@ -129,6 +130,7 @@ class RecordAudioView(
 
                 disableTimer()
                 disableShakingAnimation()
+                disableRecordDotAnimation()
                 stopRecordingAnimation()
             }
         }
@@ -191,6 +193,7 @@ class RecordAudioView(
             override fun onAnimationEnd(animator: Animator) {
                 if (animator == recordAudioAnimSet) {
                     startArrowShakingAnimation()
+                    startRecordDotAnimation()
                     recordAudioAnimSet = null
                 }
             }
@@ -206,10 +209,24 @@ class RecordAudioView(
             ObjectAnimator.ofFloat(lockArrow, View.TRANSLATION_Y, lockArrow.y).apply {
                 repeatMode = ValueAnimator.REVERSE
                 repeatCount = ValueAnimator.INFINITE
-                duration = SHAKING_DURATION
+                duration = REVERSE_ANIM_DURATION
             }
         )
         lockArrowShakingAnimSet?.start()
+    }
+
+    private fun startRecordDotAnimation() {
+        recordDotAnimSet?.cancel()
+        recordDotAnimSet = AnimatorSet()
+        recordDotAnimSet?.interpolator = AccelerateInterpolator()
+        recordDotAnimSet?.playTogether(
+            ObjectAnimator.ofFloat(recordDot, View.ALPHA, 0.5f, 1f).apply {
+                repeatMode = ValueAnimator.REVERSE
+                repeatCount = ValueAnimator.INFINITE
+                duration = REVERSE_ANIM_DURATION
+            }
+        )
+        recordDotAnimSet?.start()
     }
 
     private fun stopRecordingAnimation() {
@@ -274,9 +291,14 @@ class RecordAudioView(
         lockArrowShakingAnimSet = null
     }
 
+    private fun disableRecordDotAnimation() {
+        recordDotAnimSet?.cancel()
+        recordDotAnimSet = null
+    }
+
     companion object {
         private const val RECORD_PANEL_APPEARANCE_DURATION = 330L
-        private const val SHAKING_DURATION = 600L
+        private const val REVERSE_ANIM_DURATION = 600L
         private const val MAX_RECORD_DURATION = 10L * 60 * 1000 // 10 min in millis
     }
 }
