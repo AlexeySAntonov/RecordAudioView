@@ -90,7 +90,6 @@
         android:layout_width="52dp"
         android:layout_height="52dp"
         android:backgroundTint="@color/appGrey"
-        android:elevation="4dp"
         android:scaleType="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
